@@ -62,7 +62,7 @@ def build_pipeline(n_components_pca=12, k_best=18):
         ('variance_filter', VarianceThreshold(threshold=0.01)),
 
         # 🔥 FIXED LINE (IMPORTANT CHANGE)
-        ('mi_filter', SelectKBest(k=k_best)),
+        ('mi_filter', SelectKBest(score_func=mutual_info_classif, k=k_best))
 
         ('pca', PCA(n_components=n_components_pca, random_state=SEED)),
 
