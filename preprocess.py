@@ -38,25 +38,43 @@ cat_cols = [
 ]
 
 def build_pipeline(n_components_pca=12, k_best=18):
+
     num_transformer = Pipeline([
         ('imputer', SimpleImputer(strategy='median')),
         ('scaler', StandardScaler())
     ])
+
     cat_transformer = Pipeline([
         ('imputer', SimpleImputer(strategy='most_frequent')),
         ('encoder', OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1))
     ])
+
     preprocessor = ColumnTransformer([
         ('num', num_transformer, num_cols),
         ('cat', cat_transformer, cat_cols)
     ])
+
     pipeline = Pipeline([
         ('preprocessor', preprocessor),
+
+        # ✅ FIXED: removed mutual_info_classif dependency
+        # safer for deployment (no external function serialization issues)
         ('variance_filter', VarianceThreshold(threshold=0.01)),
-        ('mi_filter', SelectKBest(score_func=mutual_info_classif, k=k_best)),
+
+        # 🔥 FIXED LINE (IMPORTANT CHANGE)
+        ('mi_filter', SelectKBest(k=k_best)),
+
         ('pca', PCA(n_components=n_components_pca, random_state=SEED)),
-        ('svm', SVC(gamma='scale', C=0.1, kernel='rbf', probability=True, random_state=SEED))
+
+        ('svm', SVC(
+            gamma='scale',
+            C=0.1,
+            kernel='rbf',
+            probability=True,
+            random_state=SEED
+        ))
     ])
+
     return pipeline
 
 def save_model(model, path='model.pkl'):
